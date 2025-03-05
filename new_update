@@ -170,3 +170,102 @@ public class MemberSearchStories extends JUnitStories {
         return Arrays.asList("member_search.story");
     }
 }
+---------------------
+
+package com.aetna.clinical.controller;
+
+import com.aetna.clinical.common.dto.mappers.Account;
+import com.aetna.clinical.common.dto.mappers.AccountResponse;
+import com.aetna.clinical.common.service.MemberService;
+import org.jbehave.core.annotations.Given;
+import org.jbehave.core.annotations.Then;
+import org.jbehave.core.annotations.When;
+import org.junit.Assert;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Collections;
+
+public class MemberSearchSteps {
+
+    @Mock
+    private MemberService memberService;
+
+    @Mock
+    private RestTemplate restTemplate; // Mock RestTemplate for API calls
+
+    @InjectMocks
+    private memberSearchController memberSearchController;
+
+    private ResponseEntity<AccountResponse> response;
+
+    public MemberSearchSteps() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Given("the memberSearch API is available")
+    public void givenMemberSearchApiIsAvailable() {
+        // No specific setup needed here, as the API is assumed to be available
+    }
+
+    @When("I send a GET request to $url")
+    public void whenISendAGetRequestTo(String url) {
+        // Mock the response from MemberService
+        AccountResponse mockResponse = new AccountResponse();
+        Account account = new Account();
+        account.setCmmId("5~186203440+10+4+20240101+793761+D+4");
+        account.setName("FREDRANIQU AMANOWEL");
+        account.setGender("M");
+        account.setDob("1957-10-15");
+        account.setStatus("Terminated Coverage");
+        account.setStartDate("2024-01-01");
+        account.setEndDate("2024-12-31");
+        account.setRelationshipToSubscriber(null);
+        mockResponse.setAccounts(Collections.singletonList(account));
+
+        Mockito.when(memberService.getMemberById("300015167300", null, null, null, null))
+                .thenReturn(mockResponse);
+
+        // Simulate the API call
+        response = memberSearchController.getMemberById("300015167300", null, null, null, null);
+    }
+
+    @Then("the response status should be $status and the response should contain json Object: $expectedJson")
+    public void thenResponseShouldContainJsonObject(int status, String expectedJson) {
+        // Verify the response status
+        Assert.assertEquals(status, response.getStatusCodeValue());
+
+        // Verify the response body
+        AccountResponse responseBody = response.getBody();
+        Assert.assertNotNull(responseBody);
+
+        // Convert the response to JSON and compare with the expected JSON
+        String actualJson = convertAccountResponseToJson(responseBody);
+        Assert.assertEquals(expectedJson, actualJson);
+    }
+
+    private String convertAccountResponseToJson(AccountResponse response) {
+        // Convert the AccountResponse object to a JSON string
+        // This is a simplified example; you can use a library like Jackson or Gson for proper JSON conversion
+        StringBuilder jsonBuilder = new StringBuilder();
+        jsonBuilder.append("{\"accounts\":[");
+        for (Account account : response.getAccounts()) {
+            jsonBuilder.append("{");
+            jsonBuilder.append("\"CMMid\":\"").append(account.getCmmId()).append("\",");
+            jsonBuilder.append("\"name\":\"").append(account.getName()).append("\",");
+            jsonBuilder.append("\"gender\":\"").append(account.getGender()).append("\",");
+            jsonBuilder.append("\"dob\":\"").append(account.getDob()).append("\",");
+            jsonBuilder.append("\"status\":\"").append(account.getStatus()).append("\",");
+            jsonBuilder.append("\"startDate\":\"").append(account.getStartDate()).append("\",");
+            jsonBuilder.append("\"endDate\":\"").append(account.getEndDate()).append("\",");
+            jsonBuilder.append("\"relationshipToSubscriber\":").append(account.getRelationshipToSubscriber());
+            jsonBuilder.append("}");
+        }
+        jsonBuilder.append("]}");
+        return jsonBuilder.toString();
+    }
+}
