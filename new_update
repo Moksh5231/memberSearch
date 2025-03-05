@@ -1,0 +1,172 @@
+Step 1: Project Dependencies
+Ensure you have the following dependencies in your pom.xml or build.gradle:
+
+xml
+Copy
+<dependencies>
+    <!-- Spring Boot Starter Test -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- JBehave -->
+    <dependency>
+        <groupId>org.jbehave</groupId>
+        <artifactId>jbehave-core</artifactId>
+        <version>4.8.3</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- Mockito -->
+    <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>4.0.0</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- JUnit (if not already included) -->
+    <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.13.2</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+Run HTML
+Step 2: Create the JBehave Story File
+Create a file named member_search.story in the src/test/resources directory:
+
+plaintext
+Copy
+Scenario: Search for a member by ID
+Given a member with ID "12345"
+When the member search API is called with ID "12345"
+Then the response should contain the member details
+
+Scenario: Search for a member by name and date of birth
+Given a member with first name "John", last name "Doe", and date of birth "1980-01-01"
+When the member search API is called with first name "John", last name "Doe", and date of birth "1980-01-01"
+Then the response should contain the member details
+
+Scenario: Search for a member by phone number
+Given a member with phone number "123-456-7890"
+When the member search API is called with phone number "123-456-7890"
+Then the response should contain the member details
+Step 3: Create the JBehave Steps Class
+Create a class named MemberSearchSteps in the src/test/java directory:
+
+java
+Copy
+package com.aetna.clinical.controller;
+
+import com.aetna.clinical.common.dto.mappers.AccountResponse;
+import com.aetna.clinical.common.service.MemberService;
+import org.jbehave.core.annotations.Given;
+import org.jbehave.core.annotations.Then;
+import org.jbehave.core.annotations.When;
+import org.junit.Assert;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
+
+public class MemberSearchSteps {
+
+    @Mock
+    private MemberService memberService;
+
+    @InjectMocks
+    private memberSearchController memberSearchController;
+
+    private ResponseEntity<AccountResponse> response;
+
+    public MemberSearchSteps() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Given("a member with ID $memberId")
+    public void givenMemberWithId(String memberId) {
+        AccountResponse accountResponse = new AccountResponse();
+        // Set up mock response for memberService.getMemberById
+        Mockito.when(memberService.getMemberById(memberId, null, null, null, null)).thenReturn(accountResponse);
+    }
+
+    @Given("a member with first name $firstName, last name $lastName, and date of birth $dob")
+    public void givenMemberWithNameAndDob(String firstName, String lastName, String dob) {
+        AccountResponse accountResponse = new AccountResponse();
+        // Set up mock response for memberService.getMemberById
+        Mockito.when(memberService.getMemberById(null, firstName, lastName, dob, null)).thenReturn(accountResponse);
+    }
+
+    @Given("a member with phone number $phoneNumber")
+    public void givenMemberWithPhoneNumber(String phoneNumber) {
+        AccountResponse accountResponse = new AccountResponse();
+        // Set up mock response for memberService.getMemberById
+        Mockito.when(memberService.getMemberById(null, null, null, null, phoneNumber)).thenReturn(accountResponse);
+    }
+
+    @When("the member search API is called with ID $memberId")
+    public void whenMemberSearchApiCalledWithId(String memberId) {
+        response = memberSearchController.getMemberById(memberId, null, null, null, null);
+    }
+
+    @When("the member search API is called with first name $firstName, last name $lastName, and date of birth $dob")
+    public void whenMemberSearchApiCalledWithNameAndDob(String firstName, String lastName, String dob) {
+        response = memberSearchController.getMemberById(null, firstName, lastName, dob, null);
+    }
+
+    @When("the member search API is called with phone number $phoneNumber")
+    public void whenMemberSearchApiCalledWithPhoneNumber(String phoneNumber) {
+        response = memberSearchController.getMemberById(null, null, null, null, phoneNumber);
+    }
+
+    @Then("the response should contain the member details")
+    public void thenResponseShouldContainMemberDetails() {
+        Assert.assertNotNull(response);
+        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assert.assertNotNull(response.getBody());
+    }
+}
+Step 4: Configure JBehave Runner
+Create a JUnit test runner class to execute the JBehave stories:
+
+java
+Copy
+package com.aetna.clinical.controller;
+
+import org.jbehave.core.configuration.Configuration;
+import org.jbehave.core.configuration.MostUsefulConfiguration;
+import org.jbehave.core.io.LoadFromClasspath;
+import org.jbehave.core.junit.JUnitStories;
+import org.jbehave.core.reporters.StoryReporterBuilder;
+import org.jbehave.core.steps.InjectableStepsFactory;
+import org.jbehave.core.steps.InstanceStepsFactory;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.jbehave.core.reporters.Format.CONSOLE;
+
+public class MemberSearchStories extends JUnitStories {
+
+    @Override
+    public Configuration configuration() {
+        return new MostUsefulConfiguration()
+                .useStoryLoader(new LoadFromClasspath(this.getClass().getClassLoader()))
+                .useStoryReporterBuilder(new StoryReporterBuilder().withDefaultFormats().withFormats(CONSOLE));
+    }
+
+    @Override
+    public InjectableStepsFactory stepsFactory() {
+        return new InstanceStepsFactory(configuration(), new MemberSearchSteps());
+    }
+
+    @Override
+    protected List<String> storyPaths() {
+        return Arrays.asList("member_search.story");
+    }
+}
