@@ -1,0 +1,255 @@
+EIEHeader jar integration:
+Follow the below steps to integrate EIEHeader jar to Spring boot application.
+-	To include eieHeader Jar Add below dependency in pom.xml
+<dependency>
+<groupId>com.aetna.microservices.adapter</groupId>
+<artifactId>hcb-ms-eieheader-adapter</artifactId>
+<version>0.0.3-SNAPSHOT</version>
+</dependency>
+
+-	Add below Class for scanning required classes for injection.
+
+@Configuration
+@ComponentScan(basePackages = "com.aetna.microservices.adapter.eieheader")
+public class EieheaderAdapterBeanConfig {
+}
+-	Call eieHeaderBuilder by passing below properties.
+
+EieHeaderConfigProperties eieHeaderConfigProperties  = new EieHeaderConfigProperties();
+                eieHeaderConfigProperties.setApiVersion("3.1.2"); 
+               eieHeaderConfigProperties.setPlacement("header"); //possible values: header, body, map
+               eieHeaderConfigProperties.setContentType("json"); //possible values: xml, json
+               eieHeaderConfigProperties.setMethod("GET"); //http request method GET/POST/PUT
+               eieHeaderConfigProperties.setEieHeaderVersion(“v1”); (possible values are v1 or v2)
+              EieHeaderInfo<?> eieHeaderInfo = eieHeaderBuilder.buildEieHeader(requestHeaders, "", eieHeaderConfigProperties);       //requestHeaders - http request headers map
+
+-	In case of user token (id_token), required to add below properties to validate the user token. Service will receive exception if these properties are not configured and Idtoken is passed in the request.
+
+eieheader.httpclientEnabled=true
+eieheader.httpclient.jwksapi.url=https://qaapi01.int.aetna.com/identitymanagement/qapath1/.well-known/jwks.json
+##Below properties are optional and you can customize by overriding.
+eieheader.httpclient.jwksapi.connectTimeout=30000
+eieheader.httpclient.jwksapi.connectionRequestTimeout=30000
+eieheader.httpclient.jwksapi.socketTimeout=30000
+eieheader.httpclient.jwksapi.maxTotalConnections=50
+eieheader.httpclient.jwksapi.defaultMaxPerRouteConnections=50
+
+#PING JWKS properties
+eieheader.httpclient.pingjwksapi.url=https://authsvc-uat.cvshealth.com/pf/JWKS
+eieheader.httpclient.pingjwksapi.connectTimeout=30000
+eieheader.httpclient.pingjwksapi.connectionRequestTimeout=30000
+eieheader.httpclient.pingjwksapi.socketTimeout=30000
+eieheader.httpclient.pingjwksapi.maxTotalConnections=50
+eieheader.httpclient.pingjwksapi.defaultMaxPerRouteConnections=50
+
+Required header parameters for generating EIEHeader:
+App Token:
+-	x-apitransactionid 
+-	x-username
+-	x-consumer-custom-id
+User Token:
+-	x-apitransactionid
+-	x-username
+-	x-consumer-custom-id
+-	id_token
+Impersonation:
+-	x-apitransactionid
+-	x-username
+-	x-consumer-custom-id
+-	id_token
+-	ae_ImpersonationApp
+-	ae_ImpersonationUser
+
+Sample request and responses:
+V3:
+AppToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/3
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+
+AppToken response:
+x-eiecorrelationid: {"eiecorrelationid":"cd834c978082c809eab7922b61042eb0|7fd914a5672091be00078533"}, x-eieversion: {"eieversion":{"major":3,"minor":0,"maintenance":0}}, x-apitransactionId: 7fd914a5672091be00078533, x-eieaction: GET, x-eieapplication: {"eieapplication":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0"}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+UserToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/3
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+id_token: <id_token>
+
+UserToken response:
+x-eiecorrelationid: {"eiecorrelationid":"cd834c978082c809eab7922b61042eb0|7fd914a5672091be00078533"}, x-eieversion: {"eieversion":{"Major":3,"Minor":0,"Maintenance":0}}, x-apitransactionId: 7fd914a5672091be00078533, x-eieaction: GET, x-eieapplication: {"eieapplication":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0"}}, x-eieusercontext: {"eieusercontext":{"AccountIdentifier":{"accountIdentiferSource":"60","accountIdentifierValue":"N870525"},"LevelOfAssurance":{"assuranceType":"identity","assuranceValue":"http://consumer.aetna.com/assurance/loa-2"},"AuthorizedRole":[{"Role":""}],"BusinessIdentifier":[],"ConstituentRole":[{"Role":"Contractors"}]}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+v3.1:
+AppToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/3.1
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+
+AppToken response:
+x-eiecorrelationid: cd834c978082c809eab7922b61042eb0|7fd914a5672091be00078533, x-eieversion: {"eieversion":{"major":3,"minor":0,"maintenance":0}}, x-apitransactionId: 7fd914a5672091be00078533, x-eieaction: GET, x-eieapplication: {"eieapplication":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0"}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+UserToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/3.1
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+id_token: <id_token>
+
+UserToken response:
+x-eiecorrelationid: cd834c978082c809eab7922b61042eb0|7fd914a5672091be00078533, x-eieversion: {"eieversion":{"Major":3,"Minor":0,"Maintenance":0}}, x-apitransactionId: 7fd914a5672091be00078533, x-eieaction: GET, x-eieapplication: {"eieapplication":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0"}}, x-eieusercontext: {"eieusercontext":{"AccountIdentifier":{"accountIdentifierSource":"60","accountIdentifierValue":"N870525"},"LevelOfAssurance":{"assuranceType":"identity","assuranceValue":"http://consumer.aetna.com/assurance/loa-2"},"AuthorizedRole":[{"Role":""}],"BusinessIdentifier":[],"ConstituentRole":[{"Role":"Contractors"}]}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+v3.1.1:
+AppToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/3.1.1
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+
+AppToken response:
+x-eiecorrelationid: cd834c978082c809eab7922b61042eb0|7fd914a5672091be00078533, x-eieversion: {"eieversion":{"major":3,"minor":0,"maintenance":0}}, x-apitransactionId: 7fd914a5672091be00078533, x-eieaction: GET, x-eieapplication: {"eieapplication":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0"}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+UserToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/3.1.1
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+id_token: <id_token>
+
+UserToken response:
+x-eiecorrelationid: cd834c978082c809eab7922b61042eb0|7fd914a5672091be00078533, x-eieversion: {"eieversion":{"Major":3,"Minor":0,"Maintenance":0}}, x-apitransactionId: 7fd914a5672091be00078533, x-eieaction: GET, x-eieapplication: {"eieapplication":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0"}}, x-eieusercontext: {"eieusercontext":{"AccountIdentifier":{"accountIdentifierSource":"60","accountIdentifierValue":"N870525"},"LevelOfAssurance":{"assuranceType":"identity","assuranceValue":"http://consumer.aetna.com/assurance/loa-2"},"AuthorizedRole":[{"Role":""}],"BusinessIdentifier":[],"ConstituentRole":[{"Role":"Contractors"}]}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+
+v3.1.2:
+AppToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/3.1.2
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+
+AppToken response:
+x-eiecorrelationid: cd834c978082c809eab7922b61042eb0|7fd914a5672091be00078533, x-eieversion: {"eieversion":{"Major":3,"Minor":0,"Maintenance":0}}, x-apitransactionId: 7fd914a5672091be00078533, x-eieaction: GET, x-eieapplication: {"eieapplication":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0"}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+UserToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/3.1.2
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+id_token: <id_token>
+
+UserToken response:
+x-eiecorrelationid: cd834c978082c809eab7922b61042eb0|7fd914a5672091be00078533, x-eieversion: {"eieversion":{"Major":3,"Minor":0,"Maintenance":0}}, x-apitransactionId: 7fd914a5672091be00078533, x-eieaction: GET, x-eieapplication: {"eieapplication":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0"}}, x-eieusercontext: {"eieusercontext":{"AccountIdentifier":{"accountIdentifierSource":"60","accountIdentifierValue":"N870525"},"LevelOfAssurance":{"assuranceType":"identity","assuranceValue":"http://consumer.aetna.com/assurance/loa-2"},"AuthorizedRole":[{"Role":""}],"BusinessIdentifier":[],"ConstituentRole":[{"Role":"Contractors"}]}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+Impersonation request:
+x-apitransactionid:dd51bf1b66f08800006466c0
+x-forwarded-path:/healthcare/header/json/3.1.2
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+id_token:<id_token>
+ae_ImpersonationApp:ca7d87924dd578f38ed98684f5875ec2
+ae_ImpersonationUser:QASP2-DEP-002-264102450
+
+Impersonation response:
+x-eiecorrelationid: cd834c978082c809eab7922b61042eb0|dd51bf1b66f08800006466c0, x-eieversion: {"eieversion":{"Major":3,"Minor":0,"Maintenance":0}}, x-apitransactionId: dd51bf1b66f08800006466c0, x-eieaction: GET, x-eieapplication: {"eieapplication":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0"}}, x-eieusercontext: {"eieusercontext":{"AccountIdentifier":{"accountIdentifierSource":"1","accountIdentifierValue":"QASP2-DEP-002-264102450"},"LevelOfAssurance":{"assuranceType":"identity","assuranceValue":"http://consumer.aetna.com/assurance/loa-2"},"AuthorizedRole":[{"Role":"dependent"},{"Role":"memberDependent1"}],"BusinessIdentifier":[],"ConstituentRole":[{"Role":"Members"}]}}, x-eieimpersonatingusercontext: {"eieimpersonatingusercontext":{"AccountIdentifier":{"accountIdentifierSource":"60","accountIdentifierValue":"N870525"},"LevelOfAssurance":{"assuranceType":"identity","assuranceValue":"http://consumer.aetna.com/assurance/loa-2"},"GrantedLevelOfAssurance":{"assuranceType":"identity","assuranceValue":"http://consumer.aetna.com/assurance/loa-2"},"AuthorizedRole":[{"Role":""}],"BusinessIdentifier":[],"ConstituentRole":[{"Role":"Contractors"}]}}, Content-Type: application/json, x-global-transaction-id: dd51bf1b66f08800006466c0
+
+
+v3.1.3:
+AppToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/3.1.3
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+
+AppToken response:
+x-eiecorrelationid: cd834c978082c809eab7922b61042eb0|7fd914a5672091be00078533, x-eieversion: {"eieversion":{"Major":3,"Minor":0,"Maintenance":0}}, x-apitransactionId: 7fd914a5672091be00078533, x-eieaction: GET, x-eieapplication: {"eieapplication":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0"}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+UserToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/3.1.3
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+id_token: <id_token>
+
+UserToken response:
+x-eiecorrelationid: cd834c978082c809eab7922b61042eb0|7fd914a5672091be00078533, x-eieversion: {"eieversion":{"Major":3,"Minor":0,"Maintenance":0}}, x-apitransactionId: 7fd914a5672091be00078533, x-eieaction: GET, x-eieapplication: {"eieapplication":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0"}}, x-eieusercontext: {"eieusercontext":{"AccountIdentifier":{"accountIdentifierSource":"60","accountIdentifierValue":"N870525"},"LevelOfAssurance":{"assuranceType":"identity","assuranceValue":"http://consumer.aetna.com/assurance/loa-2"},"AuthorizedRole":[{"Role":""}],"BusinessIdentifier":[],"ConstituentRole":[{"Role":"Contractors"}]}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+
+v2(build-jwteiheader-87c9:6.0.0):
+AppToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/2
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+
+AppToken response:
+EIEHeaderAction: READ, EIEHeaderOrchestratingApplicationIdentifier: {"applicationIdentifier":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0","idType":"applications"}}, EIEHeaderApplicationIdentifier: {"applicationIdentifier":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0","idType":"applications"}}, EIEHeaderTransactionID: 7fd914a5672091be00078533, EIEHeaderVersion: {"eieHeaderVersion":{"major":2,"minor":0,"maintenance":0}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+UserToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/2
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+id_token:<id_token>
+
+UserToken response:
+EIEHeaderAction: READ, EIEHeaderOrchestratingApplicationIdentifier: {"applicationIdentifier":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0","idType":"applications"}}, EIEHeaderUserContext: {"eieHeaderUserContext":{"dnAccountName":"CN=N870525,OU=Contractors,OU=internal,DC=aethq,DC=aetnaq,DC=com","assuranceLevel":"http://consumer.aetna.com/assurance/loa-2","eieHeaderAuthorizedRole":[{"authorizedRole":""}],"accountIdentifier":{"idSource":"60","idValue":"N870525","idType":"accounts"}}}, EIEHeaderApplicationIdentifier: {"applicationIdentifier":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0","idType":"applications"}}, EIEHeaderTransactionID: 7fd914a5672091be00078533, EIEHeaderVersion: {"eieHeaderVersion":{"major":2,"minor":0,"maintenance":0}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+Impersonation request:
+x-apitransactionid:dd51bf1b66f08800006466c0
+x-forwarded-path:/healthcare/header/json/2
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+id_token:<id_token>
+ae_ImpersonationApp:ca7d87924dd578f38ed98684f5875ec2
+ae_ImpersonationUser:QASP2-DEP-002-264102450
+
+Impersonation response:
+EIEHeaderAction: READ, EIEHeaderOrchestratingApplicationIdentifier: {"applicationIdentifier":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0","idType":"applications"}}, EIEHeaderImpersonatingApplicationIdentifier: {"impersonatingApplicationIdentifier":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0","idType":"applications"}}, EIEHeaderUserContext: {"eieHeaderUserContext":{"dnAccountName":"CN=QASP2-DEP-002-264102450,OU=Members,OU=External,DC=aetheq,DC=aetnaeq,DC=com","assuranceLevel":"http://consumer.aetna.com/assurance/loa-2","eieHeaderAuthorizedRole":[{"authorizedRole":""},{"authorizedRole":"UR:-dependent"},{"authorizedRole":"UR:-memberDependent1"}],"impersonatingAccountIdentifier":{"idSource":"60","idValue":"N870525","idType":"accounts"},"accountIdentifier":{"idSource":"1","idValue":"QASP2-DEP-002-264102450","idType":"accounts"}}}, EIEHeaderApplicationIdentifier: {"applicationIdentifier":{"idSource":108,"idValue":"ca7d87924dd578f38ed98684f5875ec2","idType":"applications"}}, EIEHeaderTransactionID: dd51bf1b66f08800006466c0, EIEHeaderVersion: {"eieHeaderVersion":{"major":2,"minor":0,"maintenance":0}}, Content-Type: application/json, x-global-transaction-id: dd51bf1b66f08800006466c0
+
+V7:
+AppToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/7
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+
+AppToken response:
+EIEHeaderAction: READ, EIEHeaderApplicationIdentifier: {"applicationIdentifier":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0","idType":"applications"}}, EIEHeaderTransactionID: 7fd914a5672091be00078533|cd834c978082c809eab7922b61042eb0, EIEHeaderVersion: {"eieHeaderVersion":{"minor":0,"maintenance":0}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+UserToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/7
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+id_token:<id_token>
+
+UserToken response:
+EIEHeaderAction: READ, EIEHeaderUserContext: {"eieHeaderUserContext":{"dnAccountName":"CN=N870525,OU=Contractors,OU=internal,DC=aethq,DC=aetnaq,DC=com","assuranceLevel":"http://consumer.aetna.com/assurance/loa-2","eieHeaderAuthorizedRole":[{"authorizedRole":""}],"accountIdentifier":{"idSource":"60","idValue":"N870525","idType":"accounts"},"eieHeaderBusinessIdentifier":{"businessIdentifier":[]}}}, EIEHeaderApplicationIdentifier: {"applicationIdentifier":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0","idType":"applications"}}, EIEHeaderTransactionID: 7fd914a5672091be00078533|cd834c978082c809eab7922b61042eb0, EIEHeaderVersion: {"eieHeaderVersion":{"minor":0,"maintenance":0}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+V7.2:
+AppToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/7.2
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+
+AppToken response:
+EIEHeaderAction: READ, EIEHeaderApplicationIdentifier: {"applicationIdentifier":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0","idType":"applications"}}, EIEHeaderTransactionID: 7fd914a5672091be00078533|cd834c978082c809eab7922b61042eb0, EIEHeaderVersion: {"eieHeaderVersion":{"minor":0,"maintenance":0}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+UserToken request:
+x-apitransactionid:7fd914a5672091be00078533
+x-forwarded-path:/healthcare/header/json/7.2
+x-username:MEP-qa1
+x-consumer-custom-id:cd834c978082c809eab7922b61042eb0
+id_token:<id_token>
+
+UserToken response:
+EIEHeaderAction: READ, EIEHeaderUserContext: {"eieHeaderUserContext":{"dnAccountName":"CN=N870525,OU=Contractors,OU=internal,DC=aethq,DC=aetnaq,DC=com","assuranceLevel":"http://consumer.aetna.com/assurance/loa-2","eieHeaderAuthorizedRole":[{"authorizedRole":""}],"accountIdentifier":{"idSource":"60","idValue":"N870525","idType":"accounts"},"eieHeaderBusinessIdentifier":{"businessIdentifier":[]}}}, EIEHeaderApplicationIdentifier: {"applicationIdentifier":{"idSource":108,"idValue":"cd834c978082c809eab7922b61042eb0","idType":"applications"}}, EIEHeaderTransactionID: 7fd914a5672091be00078533|cd834c978082c809eab7922b61042eb0, EIEHeaderVersion: {"eieHeaderVersion":{"minor":0,"maintenance":0}}, Content-Type: application/json, x-global-transaction-id: 7fd914a5672091be00078533
+
+
+
+
+
+
