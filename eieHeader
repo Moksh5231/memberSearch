@@ -252,4 +252,107 @@ EIEHeaderAction: READ, EIEHeaderUserContext: {"eieHeaderUserContext":{"dnAccount
 
 
 
+=========================================================
+
+
+Add the Dependency
+Add the following dependency to your pom.xml file:
+
+xml
+Copy
+<dependency>
+    <groupId>com.aetna.microservices.adapter</groupId>
+    <artifactId>hcb-ms-eieheader-adapter</artifactId>
+    <version>0.0.3-SNAPSHOT</version>
+</dependency>
+Run HTML
+Step 2: Configure the Bean for Scanning
+Create a configuration class to scan the required packages for injection:
+
+java
+Copy
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ComponentScan;
+
+@Configuration
+@ComponentScan(basePackages = "com.aetna.microservices.adapter.eieheader")
+public class EieheaderAdapterBeanConfig {
+}
+Step 3: Build the EIEHeader
+You can build the EIEHeader by passing the required properties. Below is an example of how to do this:
+
+java
+Copy
+import com.aetna.microservices.adapter.eieheader.EieHeaderBuilder;
+import com.aetna.microservices.adapter.eieheader.EieHeaderConfigProperties;
+import com.aetna.microservices.adapter.eieheader.EieHeaderInfo;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class EieHeaderService {
+
+    private final EieHeaderBuilder eieHeaderBuilder;
+
+    public EieHeaderService(EieHeaderBuilder eieHeaderBuilder) {
+        this.eieHeaderBuilder = eieHeaderBuilder;
+    }
+
+    public EieHeaderInfo<?> buildEieHeader(Map<String, String> requestHeaders) {
+        EieHeaderConfigProperties eieHeaderConfigProperties = new EieHeaderConfigProperties();
+        eieHeaderConfigProperties.setApiVersion("3.1.2");
+        eieHeaderConfigProperties.setPlacement("header"); // possible values: header, body, map
+        eieHeaderConfigProperties.setContentType("json"); // possible values: xml, json
+        eieHeaderConfigProperties.setMethod("GET"); // http request method GET/POST/PUT
+        eieHeaderConfigProperties.setEieHeaderVersion("v1"); // possible values are v1 or v2
+
+        return eieHeaderBuilder.buildEieHeader(requestHeaders, "", eieHeaderConfigProperties);
+    }
+}
+Step 4: Configure Properties for User Token Validation
+If you are using a user token (id_token), you need to configure the following properties in your application.properties or application.yml file:
+
+properties
+Copy
+eieheader.httpclientEnabled=true
+eieheader.httpclient.jwksapi.url=https://qaapi01.int.aetna.com/identitymanagement/qapath1/.well-known/jwks.json
+eieheader.httpclient.jwksapi.connectTimeout=30000
+eieheader.httpclient.jwksapi.connectionRequestTimeout=30000
+eieheader.httpclient.jwksapi.socketTimeout=30000
+eieheader.httpclient.jwksapi.maxTotalConnections=50
+eieheader.httpclient.jwksapi.defaultMaxPerRouteConnections=50
+
+# PING JWKS properties
+eieheader.httpclient.pingjwksapi.url=https://authsvc-uat.cvshealth.com/pf/JWKS
+eieheader.httpclient.pingjwksapi.connectTimeout=30000
+eieheader.httpclient.pingjwksapi.connectionRequestTimeout=30000
+eieheader.httpclient.pingjwksapi.socketTimeout=30000
+eieheader.httpclient.pingjwksapi.maxTotalConnections=50
+eieheader.httpclient.pingjwksapi.defaultMaxPerRouteConnections=50
+Step 5: Example Usage in a Controller
+Here’s an example of how you might use the EieHeaderService in a Spring Boot controller:
+
+java
+Copy
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
+
+@RestController
+public class MyController {
+
+    private final EieHeaderService eieHeaderService;
+
+    public MyController(EieHeaderService eieHeaderService) {
+        this.eieHeaderService = eieHeaderService;
+    }
+
+    @GetMapping("/generateEieHeader")
+    public String generateEieHeader(@RequestHeader Map<String, String> requestHeaders) {
+        EieHeaderInfo<?> eieHeaderInfo = eieHeaderService.buildEieHeader(requestHeaders);
+        return "EIEHeader generated successfully: " + eieHeaderInfo.toString();
+    }
+}
 
